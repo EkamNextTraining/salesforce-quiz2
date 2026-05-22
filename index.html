@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SF Admin Terminal — Quiz</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Archivo+Black&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+<!-- SCANLINE OVERLAY -->
+<div class="scanlines" aria-hidden="true"></div>
+<div class="noise" aria-hidden="true"></div>
+
+<!-- ══════════════ LANDING ══════════════ -->
+<div id="screen-landing" class="screen active">
+  <div class="terminal-window landing-terminal">
+    <div class="term-bar">
+      <span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>
+      <span class="term-title">sf-admin-quiz — bash — 80×24</span>
+    </div>
+    <div class="term-body">
+      <pre class="ascii-logo">
+ ____  _____ ____  ____  ____  ____  ____  ____ ____  ____
+/ ___||  ___|  _ \/ ___||  __|/ ___||  __|/ ___||  _ \/ ___|
+\___ \| |_  | |_) \___ \| |_  \___ \| |_  \___ \| |_) \___ \
+ ___) |  _| |  _ / ___) |  _|  ___) |  _|  ___) |  __/ ___) |
+|____/|_|   |_| \_\____/|_|   |____/|_|   |____/|_|  |____/
+</pre>
+      <p class="term-line"><span class="prompt">system@sf-quiz:~$</span> <span class="cmd">./launch_assessment.sh</span></p>
+      <p class="term-line out">Salesforce Admin Certification Assessment v2.0</p>
+      <p class="term-line out">Loading question bank... <span class="ok">[OK]</span></p>
+      <p class="term-line out">Initialising timer module... <span class="ok">[OK]</span></p>
+      <p class="term-line out">Connecting to response collector... <span class="ok">[OK]</span></p>
+      <div class="term-divider"></div>
+      <p class="term-line out">This assessment contains <span class="hl">20 questions</span>:</p>
+      <p class="term-line out indent">→ <span class="hl">10</span> Company Scenario (descriptive)</p>
+      <p class="term-line out indent">→ <span class="hl">5</span>  Live Coding (Apex / SOQL)</p>
+      <p class="term-line out indent">→ <span class="hl">5</span>  Multiple Choice</p>
+      <p class="term-line out">Time limit: <span class="hl">45 minutes</span></p>
+      <div class="term-divider"></div>
+      <p class="term-line"><span class="prompt">system@sf-quiz:~$</span> <span class="cmd">./register_candidate.sh</span></p>
+
+      <div class="reg-form">
+        <div class="field-row">
+          <label><span class="prompt">candidate_name</span> =&gt;</label>
+          <input type="text" id="inName" placeholder="enter your full name" autocomplete="name"/>
+        </div>
+        <div class="field-row">
+          <label><span class="prompt">email_address</span> =&gt;</label>
+          <input type="email" id="inEmail" placeholder="you@domain.com" autocomplete="email"/>
+        </div>
+        <div class="field-row">
+          <label><span class="prompt">batch_id</span> &nbsp;&nbsp;&nbsp;=&gt;</label>
+          <input type="text" id="inBatch" placeholder="e.g. SF-2025-A"/>
+        </div>
+        <div class="field-row">
+          <label><span class="prompt">org_role</span> &nbsp;&nbsp;&nbsp;=&gt;</label>
+          <select id="inRole">
+            <option value="">-- select role --</option>
+            <option>Salesforce Admin</option>
+            <option>Salesforce Developer</option>
+            <option>Salesforce Consultant</option>
+            <option>Business Analyst</option>
+            <option>Student / Fresher</option>
+          </select>
+        </div>
+        <button class="btn-launch" id="btnLaunch" onclick="startQuiz()">
+          <span class="blink-cursor">█</span> ./start_quiz.sh
+        </button>
+        <p class="err-msg" id="errMsg"></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ QUIZ ══════════════ -->
+<div id="screen-quiz" class="screen">
+  <div class="quiz-layout">
+
+    <!-- LEFT SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">SF<br/>QUIZ</div>
+      <div class="sidebar-info">
+        <div class="info-chip">
+          <span class="chip-label">CANDIDATE</span>
+          <span class="chip-val" id="sidebarName">—</span>
+        </div>
+        <div class="info-chip">
+          <span class="chip-label">BATCH</span>
+          <span class="chip-val" id="sidebarBatch">—</span>
+        </div>
+        <div class="info-chip timer-chip">
+          <span class="chip-label">TIME LEFT</span>
+          <span class="chip-val timer-val" id="sidebarTimer">45:00</span>
+        </div>
+      </div>
+
+      <div class="q-map-label">QUESTION MAP</div>
+      <div class="q-map" id="qMap"></div>
+
+      <div class="legend">
+        <div class="leg-item"><span class="leg-dot leg-answered"></span>Answered</div>
+        <div class="leg-item"><span class="leg-dot leg-current"></span>Current</div>
+        <div class="leg-item"><span class="leg-dot leg-blank"></span>Unanswered</div>
+      </div>
+
+      <button class="btn-final-submit" onclick="finalSubmit()">SUBMIT QUIZ</button>
+    </aside>
+
+    <!-- MAIN PANEL -->
+    <main class="quiz-main">
+      <div class="qcard" id="qcard">
+        <div class="qcard-top">
+          <div class="q-meta-left">
+            <span class="q-type-badge" id="qTypeBadge">SCENARIO</span>
+            <span class="q-num" id="qNum">Q01 / 20</span>
+          </div>
+          <div class="q-category-tag" id="qCatTag">Security</div>
+        </div>
+
+        <!-- SCENARIO / CODING question area -->
+        <div class="scenario-box" id="scenarioBox">
+          <div class="scenario-header">
+            <span class="scenario-icon">🏢</span>
+            <span class="scenario-label" id="scenarioLabel">SCENARIO</span>
+          </div>
+          <p class="scenario-text" id="scenarioText"></p>
+        </div>
+
+        <h2 class="q-text" id="qText"></h2>
+
+        <!-- Answer area — changes by type -->
+        <div id="answerArea"></div>
+
+        <div class="qcard-nav">
+          <button class="btn-qnav btn-prev" id="btnPrev" onclick="goTo(currentIdx - 1)">◄ PREV</button>
+          <span class="q-progress-text" id="qProgressText"></span>
+          <button class="btn-qnav btn-next" id="btnNext" onclick="goTo(currentIdx + 1)">NEXT ►</button>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- ══════════════ RESULT ══════════════ -->
+<div id="screen-result" class="screen">
+  <div class="result-terminal">
+    <div class="term-bar">
+      <span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>
+      <span class="term-title">assessment_result.log</span>
+    </div>
+    <div class="result-body">
+      <pre class="result-ascii" id="resultAscii"></pre>
+      <div class="result-grid">
+        <div class="res-stat"><span class="rs-label">CANDIDATE</span><span class="rs-val" id="rName">—</span></div>
+        <div class="res-stat"><span class="rs-label">BATCH</span><span class="rs-val" id="rBatch">—</span></div>
+        <div class="res-stat"><span class="rs-label">MCQ SCORE</span><span class="rs-val" id="rMcq">—</span></div>
+        <div class="res-stat"><span class="rs-label">TIME TAKEN</span><span class="rs-val" id="rTime">—</span></div>
+        <div class="res-stat wide"><span class="rs-label">STATUS</span><span class="rs-val" id="rStatus">—</span></div>
+      </div>
+
+      <div class="submission-log" id="submissionLog">
+        <p class="term-line"><span class="prompt">system@sf-quiz:~$</span> <span class="cmd">./submit_results.sh</span></p>
+        <p class="term-line out" id="submitLine1">Packaging responses... <span class="ok">[OK]</span></p>
+        <p class="term-line out" id="submitLine2">Connecting to Google Sheets... <span class="spinner-txt">⠋</span></p>
+        <p class="term-line out" id="submitLine3" style="display:none"></p>
+      </div>
+
+      <div class="descriptive-note">
+        <p>📝 <strong>Scenario &amp; Coding answers</strong> have been recorded and will be reviewed by your instructor.</p>
+      </div>
+
+      <button class="btn-launch" style="margin-top:24px" onclick="retryQuiz()">
+        <span class="blink-cursor">█</span> ./restart_quiz.sh
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="questions.js"></script>
+<script src="quiz.js"></script>
+</body>
+</html>
